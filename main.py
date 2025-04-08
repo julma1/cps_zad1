@@ -1,3 +1,4 @@
+
 from signals import signal_generation as sg     # Generowanie sygnałów i szumów
 from signals import signal_analysis as sa       # Analiza sygnałów
 from operations import signal_operations as so  # Operacje na sygnałach
@@ -43,6 +44,7 @@ def main():
             print("[11] Szum impulsowy")
             signal_type = int(input("Wybierz typ sygnału (1-11): "))
 
+            # Generowanie sygnału na podstawie wybranego typu
             if signal_type == 1:
                 A = float(input("Podaj amplitudę (A): "))
                 t_start = float(input("Podaj czas początkowy (t1): "))
@@ -154,16 +156,23 @@ def main():
             print("[4] Dzielenie sygnałów")
             operation = int(input("Wybierz operację: "))
 
+            # Wczytanie dwóch sygnałów z plików
             print("Najpierw wybierz pierwszy sygnał.")
-            # Wczytanie sygnału z pliku
             file1 = input("Podaj nazwę pliku z sygnałem 1: ")
             sr1, signal1 = fh.load_from_binary(file1)
 
             print("Teraz wybierz drugi sygnał.")
-            # Wczytanie sygnału z pliku
             file2 = input("Podaj nazwę pliku z sygnałem 2: ")
             sr2, signal2 = fh.load_from_binary(file2)
 
+            # Przycinanie do tej samej długości
+            min_len = min(len(signal1), len(signal2))
+            if len(signal1) != len(signal2):
+                print(f"Uwaga: sygnały miały różne długości i zostały przycięte do {min_len} próbek.")
+            signal1 = signal1[:min_len]
+            signal2 = signal2[:min_len]
+
+            # Wykonanie operacji
             if operation == 1:
                 result = so.add_signals(signal1, signal2)
                 print("Sygnały zostały dodane.")
@@ -179,43 +188,21 @@ def main():
             else:
                 print("Nieprawidłowy wybór operacji.")
 
-        elif choice == 3:
-            print("--- Analiza Sygnału ---")
-            file_name = input("Podaj nazwę pliku z sygnałem: ")
-            sr, signal = fh.load_from_binary(file_name)
-            print(f"Średnia: {sa.calculate_mean(signal)}")
-            print(f"Wartość RMS: {sa.calculate_rms(signal)}")
-            print(f"Wariancja: {sa.calculate_variance(signal)}")
-            print(f"Moc średnia: {sa.calculate_power(signal)}")
+            # Zapis, analiza i wykres
+            save = input("Czy chcesz zapisać wynik do pliku? (t/n): ")
+            if save.lower() == 't':
+                output_file = input("Podaj nazwę pliku wynikowego: ")
+                fh.save_to_binary(output_file, result)
+                print(f"Wynik zapisano do pliku {output_file}")
 
-        elif choice == 4:
-            print("--- Wizualizacja ---")
-            file_name = input("Podaj nazwę pliku z sygnałem: ")
-            sr, signal = fh.load_from_binary(file_name)
-            plot.plot_signal(np.arange(len(signal)) / sr, signal, title="Wykres sygnału")
-            plot.plot_histogram(signal, bins=10, title="Histogram sygnału")
+            print("--- Analiza wynikowego sygnału ---")
+            print(f"Średnia: {sa.calculate_mean(result)}")
+            print(f"Wartość RMS: {sa.calculate_rms(result)}")
+            print(f"Wariancja: {sa.calculate_variance(result)}")
+            print(f"Moc średnia: {sa.calculate_power(result)}")
 
-        elif choice == 5:
-            print("--- Zapis/Wczytanie Sygnału ---")
-            action = input("[1] Zapis do pliku\n"
-                           "[2] Wczytanie z pliku\n"
-                           "Wybierz: ")
-
-            if action == "1":
-                file_name = input("Podaj nazwę pliku do zapisu: ")
-                fh.save_to_binary(file_name, signal)
-                print(f"Sygnał zapisano do pliku {file_name}.")
-
-            elif action == "2":
-                file_name = input("Podaj nazwę pliku do odczytu: ")
-                sr, signal = fh.load_from_binary(file_name)
-                print(f"Sygnał wczytano z pliku {file_name}.")
-
-            else:
-                print("Nieprawidłowy wybór.")
-
-        else:
-            print("Nieprawidłowy wybór. Spróbuj ponownie.")
+            plot.plot_signal(np.arange(len(result)) / sr1, result, title="Wykres wynikowego sygnału")
+            plot.plot_histogram(result, bins=10, title="Histogram wynikowego sygnału")
 
 if __name__ == "__main__":
     main()
